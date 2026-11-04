@@ -412,7 +412,9 @@ async function openCase() {
 async function sendAction(text) {
   if (busy || !text.trim()) return;
   busy = true; setBusy(true);
-  addMsg("player", esc(text.trim()));
+  const content = text.trim();
+  addMsg("player", esc(content));
+  messages.push({ role: "user", content: content });
   const div = addMsg("assistant", "");
   try {
     const msgs = [{ role: "system", content: buildSystemPrompt(game) }].concat(messages);
@@ -420,7 +422,6 @@ async function sendAction(text) {
       div.textContent += d;
       $("log").scrollTop = $("log").scrollHeight;
     });
-    messages.push({ role: "user", content: text.trim() });
     messages.push({ role: "assistant", content: full });
     if (full.indexOf("CASE CLOSED") !== -1) {
       game.closed = true;
@@ -429,6 +430,7 @@ async function sendAction(text) {
     }
     saveGame();
   } catch (e) {
+    messages.pop(); /* 回滚本次输入，重试时不会重复 */
     div.innerHTML = "<span class='dim'>主理人暂时失联：" + esc(String(e.message || e)) + "<br>已保留现场，稍后重试即可。若反复失败，请在 WorkBuddy 分享链接内游玩（AI 调用仅在应用原始域名下生效）。</span>";
   }
   busy = false; setBusy(false);
