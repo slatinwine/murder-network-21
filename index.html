@@ -45,6 +45,9 @@
   @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   .msg .who { font-size: 11px; letter-spacing: 0.35em; color: var(--brass-dark); margin-bottom: 6px; }
   .msg .txt { font-size: 15px; white-space: pre-wrap; }
+  .msg .txt code { background: var(--panel); border: 1px solid var(--panel-edge); padding: 0 5px; font-size: 13px; }
+  .msg .txt .md-h { display: block; color: var(--brass); font-weight: 600; letter-spacing: 0.12em; margin: 6px 0 2px; }
+  .msg .txt .md-hr { display: block; border: none; border-top: 1px solid var(--panel-edge); margin: 10px 0; }
   .msg.assistant .who { color: var(--ink-dim); }
   .msg.assistant .txt { border-left: 2px solid var(--panel-edge); padding-left: 14px; }
   .msg.player .who { color: var(--ink-dim); text-align: right; }
@@ -149,6 +152,22 @@ const cloud = WorkBuddyCloud.createWorkBuddyCloud({
 const $ = (id) => document.getElementById(id);
 const rnd = (a) => a[Math.floor(Math.random() * a.length)];
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+/* 轻量 Markdown：先转义再排版，粗体/斜体/行内码/标题/列表/分割线 */
+function md(src) {
+  let s = esc(src);
+  s = s.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/(^|[^*\w])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
+  s = s.replace(/__([^_\n]+)__/g, "<strong>$1</strong>");
+  const lines = s.split("\n").map(function (line) {
+    if (/^#{1,4}\s+/.test(line)) return '<span class="md-h">' + line.replace(/^#{1,4}\s+/, "") + "</span>";
+    if (/^\s*[-*•]\s+/.test(line)) return line.replace(/^\s*[-*•]\s+/, "• ");
+    if (/^\s*-{3,}\s*$/.test(line)) return '<span class="md-hr"></span>';
+    return line;
+  });
+  return lines.join("\n");
+}
 const SAVE_KEY = "mn21-save-v2";
 
 /* ================= 素材池 ================= */
@@ -381,7 +400,7 @@ function enterGame(cs, msgs, resume) {
   if (resume) {
     messages.forEach(function (m) {
       if (m.role === "system") return;
-      addMsg(m.role === "assistant" ? "assistant" : "player", esc(m.content));
+      addMsg(m.role === "assistant" ? "assistant" : "player", m.role === "assistant" ? md(m.content) : esc(m.content));
     });
     if (game.closed) addAgainButton();
   } else {
@@ -400,6 +419,7 @@ async function openCase() {
        { role: "user", content: "【开场】我是名侦探。接单，吐槽你，然后开始本案。" }],
       function (d) { div.textContent += d; $("log").scrollTop = $("log").scrollHeight; }
     );
+    div.innerHTML = md(full);
     messages.push({ role: "user", content: "【开场】我是名侦探。接单，吐槽你，然后开始本案。" });
     messages.push({ role: "assistant", content: full });
     saveGame();
@@ -422,6 +442,7 @@ async function sendAction(text) {
       div.textContent += d;
       $("log").scrollTop = $("log").scrollHeight;
     });
+    div.innerHTML = md(full);
     messages.push({ role: "assistant", content: full });
     if (full.indexOf("CASE CLOSED") !== -1) {
       game.closed = true;
