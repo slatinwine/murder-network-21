@@ -3,422 +3,506 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>21世纪杀人网络 · 案件生成器</title>
+<title>21世纪杀人网络</title>
 <style>
   :root {
-    --bg: #16130e;
-    --panel: #201b13;
-    --panel-edge: #35291a;
-    --ink: #e8dcc3;
-    --ink-dim: #9a8c6f;
-    --brass: #c9a227;
-    --brass-dark: #8a6f1a;
-    --danger: #b0492f;
+    --bg: #16130e; --panel: #201b13; --panel-edge: #35291a;
+    --ink: #e8dcc3; --ink-dim: #9a8c6f;
+    --brass: #c9a227; --brass-dark: #8a6f1a; --danger: #b0492f;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
-    line-height: 1.7;
-    min-height: 100vh;
-  }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
-  header { text-align: center; margin-bottom: 36px; }
-  header .en {
-    letter-spacing: 0.5em; font-size: 12px; color: var(--ink-dim);
-    text-transform: uppercase; margin-bottom: 10px;
-  }
-  header h1 {
-    font-size: 34px; font-weight: 600; letter-spacing: 0.15em; color: var(--ink);
-  }
-  header h1 .accent { color: var(--brass); }
-  header .sub { color: var(--ink-dim); font-size: 14px; margin-top: 10px; letter-spacing: 0.1em; }
-  .divider {
-    width: 120px; height: 1px; background: var(--brass-dark);
-    margin: 22px auto 0; position: relative;
-  }
-  .divider::after {
-    content: ""; position: absolute; left: 50%; top: -3px; width: 7px; height: 7px;
-    background: var(--brass); transform: translateX(-50%) rotate(45deg);
-  }
-  .toolbar { display: flex; gap: 14px; justify-content: center; margin: 30px 0 26px; flex-wrap: wrap; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", serif; line-height: 1.75; }
+  .hidden { display: none !important; }
   button {
-    font-family: inherit; font-size: 15px; letter-spacing: 0.2em;
-    padding: 12px 30px; cursor: pointer; transition: all 0.2s;
-    background: transparent; color: var(--brass);
-    border: 1px solid var(--brass-dark);
+    font-family: inherit; font-size: 14px; letter-spacing: 0.15em; padding: 10px 22px;
+    cursor: pointer; transition: all 0.2s; background: transparent; color: var(--brass); border: 1px solid var(--brass-dark);
   }
   button:hover { background: var(--brass); color: var(--bg); }
   button.primary { background: var(--brass); color: var(--bg); border-color: var(--brass); }
   button.primary:hover { background: var(--brass-dark); border-color: var(--brass-dark); }
+  button.ghost { border-color: var(--panel-edge); color: var(--ink-dim); }
+  button.ghost:hover { color: var(--ink); background: var(--panel); }
   button:disabled { opacity: 0.4; cursor: default; }
-  button:disabled:hover { background: transparent; color: var(--brass); }
 
-  .case-code {
-    text-align: center; margin-bottom: 26px; min-height: 34px;
-  }
-  .case-code .label { font-size: 12px; letter-spacing: 0.4em; color: var(--ink-dim); }
-  .case-code .name { font-size: 24px; letter-spacing: 0.25em; color: var(--brass); margin-top: 4px; }
+  #screen-title { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; }
+  #screen-title .hero-img { width: min(680px, 92vw); border: 1px solid var(--panel-edge); box-shadow: 0 20px 60px rgba(0,0,0,0.6); margin-bottom: 34px; }
+  #screen-title .hero-img img { width: 100%; display: block; }
+  #screen-title h1 { font-size: clamp(30px, 6vw, 46px); font-weight: 600; letter-spacing: 0.22em; }
+  #screen-title .en { letter-spacing: 0.5em; font-size: 11px; color: var(--ink-dim); margin-top: 8px; text-transform: uppercase; }
+  #screen-title .tagline { color: var(--ink-dim); font-size: 14.5px; margin: 18px 0 30px; max-width: 580px; }
+  #screen-title .btns { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  #screen-title .foot { position: fixed; bottom: 18px; left: 0; right: 0; font-size: 11px; color: var(--ink-dim); letter-spacing: 0.25em; }
 
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
-  .card {
-    background: var(--panel); border: 1px solid var(--panel-edge);
-    padding: 22px 24px; opacity: 0; transform: translateY(12px);
-    animation: rise 0.5s forwards;
-  }
-  .card:nth-child(2) { animation-delay: 0.12s; }
-  .card:nth-child(3) { animation-delay: 0.24s; }
-  @keyframes rise { to { opacity: 1; transform: none; } }
-  .card .tag {
-    display: inline-block; font-size: 11px; letter-spacing: 0.3em;
-    color: var(--bg); background: var(--brass-dark); padding: 2px 10px; margin-bottom: 12px;
-  }
-  .card .tag.sin { background: var(--danger); color: var(--ink); }
-  .card h3 { font-size: 20px; font-weight: 600; letter-spacing: 0.1em; margin-bottom: 8px; }
-  .card h3 small { font-size: 12px; color: var(--ink-dim); letter-spacing: 0.15em; margin-left: 8px; font-weight: normal; }
-  .card p { font-size: 14px; color: var(--ink-dim); }
-  .card p strong { color: var(--ink); font-weight: 600; }
+  #screen-game { height: 100vh; display: flex; flex-direction: column; }
+  #gamebar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--panel-edge); background: var(--panel); flex-shrink: 0; gap: 10px; }
+  #gamebar .case-label { font-size: 11px; letter-spacing: 0.3em; color: var(--ink-dim); }
+  #gamebar .case-name { font-size: 16px; letter-spacing: 0.18em; color: var(--brass); }
+  #gamebar .tools { display: flex; gap: 10px; flex-shrink: 0; }
+  #gamebar .tools button { font-size: 12px; padding: 6px 14px; }
+  #log { flex: 1; overflow-y: auto; padding: 26px 20px 130px; max-width: 780px; width: 100%; margin: 0 auto; }
+  .msg { margin-bottom: 20px; animation: rise 0.45s both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .msg .who { font-size: 11px; letter-spacing: 0.35em; color: var(--brass-dark); margin-bottom: 6px; }
+  .msg .txt { font-size: 15px; white-space: pre-wrap; }
+  .msg.assistant .who { color: var(--ink-dim); }
+  .msg.assistant .txt { border-left: 2px solid var(--panel-edge); padding-left: 14px; }
+  .msg.player .who { color: var(--ink-dim); text-align: right; }
+  .msg.player .txt { text-align: right; }
+  .msg.system-note .txt { border: 1px dashed var(--panel-edge); background: var(--panel); padding: 10px 14px; font-size: 13px; color: var(--ink-dim); }
+  .msg .banner { width: 100%; border: 1px solid var(--panel-edge); margin-top: 12px; display: block; }
+  #log .again-wrap { text-align: center; margin: 24px 0 10px; }
 
-  .section { margin-top: 44px; }
-  .section > h2 {
-    font-size: 16px; letter-spacing: 0.35em; color: var(--brass);
-    border-bottom: 1px solid var(--panel-edge); padding-bottom: 10px; margin-bottom: 18px;
+  #inputbar { position: fixed; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, var(--bg) 78%, transparent); padding: 12px 16px 16px; z-index: 20; }
+  #chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 10px; }
+  #chips button { font-size: 12px; padding: 4px 12px; letter-spacing: 0.1em; }
+  #inputrow { display: flex; gap: 10px; max-width: 760px; margin: 0 auto; }
+  #user-input {
+    flex: 1; background: var(--panel); color: var(--ink); border: 1px solid var(--panel-edge);
+    font-family: inherit; font-size: 14.5px; padding: 11px 14px; resize: none; height: 48px;
   }
-  textarea {
-    width: 100%; min-height: 340px; background: #0f0d09; color: var(--ink);
-    border: 1px solid var(--panel-edge); padding: 18px 20px;
-    font-family: "Noto Serif SC", "SimSun", serif; font-size: 13.5px; line-height: 1.8;
-    resize: vertical;
+  #user-input:focus { outline: none; border-color: var(--brass-dark); }
+  #btn-send { flex-shrink: 0; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(10, 8, 5, 0.86); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .sheet { width: min(600px, 94vw); max-height: 80vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--panel-edge); padding: 24px 26px; }
+  .sheet h3 { color: var(--brass); letter-spacing: 0.3em; font-size: 14px; margin-bottom: 14px; }
+  .sheet p { font-size: 13.5px; color: var(--ink-dim); margin-bottom: 14px; }
+  .sheet .row { display: flex; gap: 12px; justify-content: flex-end; }
+  #toast {
+    position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+    background: var(--danger); color: var(--ink); font-size: 13px; letter-spacing: 0.1em;
+    padding: 10px 22px; z-index: 90; border: 1px solid rgba(232,220,195,0.3);
   }
-  .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
-  .rule-block { background: var(--panel); border: 1px solid var(--panel-edge); padding: 20px 24px; }
-  .rule-block h4 { color: var(--brass); font-size: 15px; letter-spacing: 0.2em; margin-bottom: 10px; }
-  .rule-block ol, .rule-block ul { padding-left: 20px; font-size: 13.5px; color: var(--ink-dim); }
-  .rule-block li { margin-bottom: 6px; }
-  .rule-block li strong { color: var(--ink); }
-  .history { font-size: 13.5px; color: var(--ink-dim); }
-  .history .h-item {
-    display: flex; gap: 16px; padding: 10px 4px; border-bottom: 1px dashed var(--panel-edge);
-  }
-  .history .h-item .no { color: var(--brass-dark); min-width: 72px; }
-  .history .h-item .t { color: var(--ink); }
-  .empty { text-align: center; padding: 30px; color: var(--ink-dim); letter-spacing: 0.2em; font-size: 13px; }
-  figure.illustration { margin-top: 18px; border: 1px solid var(--panel-edge); }
-  figure.illustration img { width: 100%; display: block; }
-  figure.illustration figcaption {
-    font-size: 12px; color: var(--ink-dim); letter-spacing: 0.25em;
-    padding: 9px 14px; background: var(--panel); border-top: 1px solid var(--panel-edge);
-  }
-  figure.illustration figcaption strong { color: var(--brass); font-weight: 600; }
-  footer { text-align: center; margin-top: 60px; font-size: 12px; color: var(--ink-dim); letter-spacing: 0.2em; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="en">Murder Network in the 21st Century</div>
-    <h1>21世纪杀人网络<span class="accent"> · </span>案件生成器</h1>
-    <div class="sub">AI 与互联网能解答一切的时代，只有它们都束手无策的案件，才会送到「二十一世纪最后的名侦探」桌上</div>
-    <div class="sub" style="margin-top:6px;">诡计取自乱步《诡计集成》九类 · 动机取自七宗罪 · 结算致敬东野圭吾《名侦探的守则》</div>
-    <div class="divider"></div>
-  </header>
 
-  <div class="toolbar">
-    <button class="primary" id="btn-draw">抽 取 新 案 件</button>
-    <button id="btn-copy" disabled>复 制 主 理 人 指 令</button>
+<section id="screen-title">
+  <div class="hero-img"><img src="img/case-intake.png" alt=""></div>
+  <h1>21世纪杀人网络</h1>
+  <div class="en">Murder Network in the 21st Century</div>
+  <p class="tagline">AI 能算出九成案件的答案。剩下那一成——数据里没有脚印、算法里没有动机的案件，会被安乐椅派的助手转单送到你桌上。<br>你是二十一世纪最后的名侦探：冷硬派、现场派、社会派。</p>
+  <div class="btns">
+    <button id="btn-continue" class="hidden">继续上局</button>
+    <button id="btn-start" class="primary">开 始 游 戏</button>
+    <button id="btn-help" class="ghost">玩法说明</button>
   </div>
+  <div class="foot">FAIR-PLAY MYSTERY · 线索必前置 · 诡计必可行</div>
+</section>
 
-  <div class="case-code" id="case-code">
-    <div class="empty">牌堆尚未翻开 —— 按下按钮，抽取今晚的案件</div>
-  </div>
-
-  <div class="cards" id="cards"></div>
-
-  <div class="section">
-    <h2>主 理 人 指 令</h2>
-    <p style="font-size:13px;color:var(--ink-dim);margin-bottom:12px;">复制下方全部文本，发送给 AI（例如 WorkBuddy 对话框），AI 将以主理人身份开启本案。</p>
-    <textarea id="prompt" readonly placeholder="抽取案件后，这里会自动生成主理人指令……"></textarea>
-  </div>
-
-  <div class="section">
-    <h2>世 界 观</h2>
-    <div class="rules">
-      <div class="rule-block">
-        <h4>AI 无所不知的时代</h4>
-        <p style="font-size:13.5px;color:var(--ink-dim);">21 世纪，人们习惯了把一切丢给 AI 和搜索引擎：查身份、查行程、查前科、查凶手概率。九成的疑案在报案前就被算法算出了答案。侦探这个职业早已被视为活化石。</p>
-      </div>
-      <div class="rule-block">
-        <h4>送到桌上的案子</h4>
-        <p style="font-size:13.5px;color:var(--ink-dim);">正因如此，能找到「二十一世纪最后的名侦探」的委托，必然是 AI 与互联网<strong style="color:var(--ink);">双重失效</strong>的案件：诡计游走在物理与人心的盲区，数据里没有脚印，算法里没有动机。侦探的价值，就是证明有些真相只能由人去看见。</p>
-      </div>
-      <div class="rule-block">
-        <h4>安乐椅派的助手</h4>
-        <p style="font-size:13.5px;color:var(--ink-dim);">侦探事务所的接单人，是一名 <strong style="color:var(--ink);">AI 助手</strong>：它负责揽客、整理案卷、远程检索与数据侧写，绝大多数单子到它手里就结了。每当它搞不定，才会把案卷转给侦探——而侦探每次接单都要吐槽一句：<strong style="color:var(--ink);">“你是安乐椅派的侦探，我是冷硬派、现场派、社会派的侦探。”</strong></p>
-      </div>
+<section id="screen-game" class="hidden">
+  <div id="gamebar">
+    <div>
+      <div class="case-label" id="gb-code"></div>
+      <div class="case-name" id="gb-name"></div>
     </div>
-    <figure class="illustration">
-      <img src="img/case-intake.png" alt="接单：AI 助手向名侦探移交案卷">
-      <figcaption><strong>接单时刻</strong> · 雨夜事务所，安乐椅派承认搞不定，把案卷转给最后的名侦探</figcaption>
-    </figure>
-  </div>
-
-  <div class="section">
-    <h2>游 戏 流 程</h2>
-    <div class="rules">
-      <div class="rule-block">
-        <h4>开场</h4>
-        <ol>
-          <li><strong>转单开场</strong>：AI 助手（安乐椅派）承认此案超出能力范围，移交案卷；侦探（玩家）照例吐槽一句，随后 AI 助手用数据摘要简报案情。</li>
-          <li>主理人以 300~500 字描写<strong>案发现场与核心谜团</strong>（密室、矛盾点、不可能状况），并交代 AI 与网络调查为何失效。</li>
-          <li>介绍登场人物与被害人，但不透露诡计、凶手与动机。</li>
-        </ol>
-      </div>
-      <div class="rule-block">
-        <h4>调查</h4>
-        <ul>
-          <li><strong>【搜查 地点/物品】</strong>—— 检验现场与证物</li>
-          <li><strong>【问询 人物】</strong>—— 与嫌疑人、证人对话</li>
-          <li><strong>【思考】</strong>—— 整理线索，主理人给提示而非答案</li>
-        </ul>
-      </div>
-      <div class="rule-block">
-        <h4>指认与结算</h4>
-        <ol>
-          <li>玩家提出<strong>最终推理</strong>：凶手是谁、手法如何、动机为何。</li>
-          <li>主理人逐项判定：凶手 / 手法 / 动机，全中则案件告破。</li>
-          <li>结算后揭晓完整真相，并附<strong>守则吐槽</strong>：本案踩中或避开了哪些推理小说老套路。</li>
-        </ol>
-      </div>
-      <div class="rule-block">
-        <h4>公平性守则（约束主理人）</h4>
-        <ul>
-          <li>所有破案必需线索，必须在指认前<strong>至少呈现过一次</strong>。</li>
-          <li>主理人不得隐瞒玩家已主动搜查到的关键证据。</li>
-          <li>诡计必须物理可行、动机必须成立，拒绝超自然解法。</li>
-        </ul>
-      </div>
+    <div class="tools">
+      <button id="btn-restart" class="ghost">换一案</button>
     </div>
-    <figure class="illustration">
-      <img src="img/case-closed.png" alt="结案：名侦探走进黎明">
-      <figcaption><strong>结案时刻</strong> · 真相大白，名侦探独自走进晨雾——安乐椅派永远不懂这一步</figcaption>
-    </figure>
   </div>
-
-  <div class="section">
-    <h2>案 件 档 案（本机记录）</h2>
-    <div class="history" id="history"><div class="empty">暂无记录</div></div>
+  <div id="log"></div>
+  <div id="inputbar">
+    <div id="chips">
+      <button data-fill="【搜查】">搜查</button>
+      <button data-fill="【问询】我想和">问询</button>
+      <button data-fill="【呼叫助手】">呼叫助手</button>
+      <button data-fill="【思考】目前线索是：">思考</button>
+      <button data-fill="【最终推理】我指认的凶手是">最终推理</button>
+    </div>
+    <div id="inputrow">
+      <textarea id="user-input" placeholder="作为名侦探，行动吧……"></textarea>
+      <button id="btn-send" class="primary">行动</button>
+    </div>
   </div>
+</section>
 
-  <footer>MURDER NETWORK IN THE 21ST CENTURY · FAIR-PLAY MYSTERY</footer>
+<div id="modal-help" class="overlay hidden">
+  <div class="sheet">
+    <h3>玩 法 说 明</h3>
+    <p>每一局，后台随机抽取「诡计 + 七宗罪动机 + 舞台 + 被害人」拼成一件全新的案子，设定对玩家保密。</p>
+    <p>AI 主理人负责演出一切：安乐椅派助手转单、案发现场、所有嫌疑人与证词。你的行动——搜查地点与物品、问询人物、呼叫助手做数据比对、随时整理推理。所有破案必需线索都会在揭晓前出现，公平本格，说到做到。</p>
+    <p>准备好后用【最终推理】指认凶手、陈述手法与动机。主理人逐项判定并评分（S / A / B / C），再揭晓完整真相与守则吐槽。</p>
+    <div class="row"><button id="help-close">明白了</button></div>
+  </div>
 </div>
 
+<div id="toast" class="hidden"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
 <script>
-// ---------- 卡池 ----------
-// 诡计卡：源自江户川乱步《诡计集成》的分类体系，提炼为可抽卡牌
+"use strict";
+
+/* ================= 云服务配置 ================= */
+const PUBLIC_CONFIG = {
+  endpoint: "https://murder-network-21.app.workbuddy.host",
+  oauthRelayBaseUrl: "https://www.workbuddy.cn/v2/as/genie-baas/oauth",
+  publishableKey: "wbpk_nhYFxiTKGpKV1dDwKHs1eq_87QAjEuU7LdM8uxy2GLjyTZzvdsUsdKS"
+};
+const cloud = WorkBuddyCloud.createWorkBuddyCloud({
+  endpoint: PUBLIC_CONFIG.endpoint,
+  oauthRelayBaseUrl: PUBLIC_CONFIG.oauthRelayBaseUrl,
+  publishableKey: PUBLIC_CONFIG.publishableKey
+});
+
+/* ================= 工具 ================= */
+const $ = (id) => document.getElementById(id);
+const rnd = (a) => a[Math.floor(Math.random() * a.length)];
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+const SAVE_KEY = "mn21-save-v2";
+
+/* ================= 素材池 ================= */
+const STAGES = [
+  { name: "暴风雪山庄", note: "大雪封路，山庄与世隔绝" },
+  { name: "孤岛别墅", note: "最后一班船已经离岸" },
+  { name: "百年老宅", note: "家族祭祖之夜" },
+  { name: "午夜剧场", note: "首演之夜的幕后" },
+  { name: "远洋邮轮", note: "航行第七天的风暴" },
+  { name: "推理作家年会", note: "人人都是写凶手的行家" },
+  { name: "废弃天文台", note: "百年一遇的流星雨之夜" },
+  { name: "深山温泉旅馆", note: "隐秘的温泉与更深的秘密" },
+  { name: "老式钟楼", note: "整点报时永远慢三分钟" },
+  { name: "私人美术馆", note: "闭馆后的最后一批客人" },
+  { name: "大学旧馆", note: "即将拆除的文学院大楼" },
+  { name: "云顶缆车站", note: "暴雨中停在半空的缆车" }
+];
+const VICTIMS = ["知名推理作家", "家族企业族长", "当红偶像", "退休法官", "化学教授", "美术馆馆长", "旅馆老板娘", "交响乐团指挥", "保险精算师", "古书商"];
+const SURNAMES = ["沈", "陆", "顾", "白", "江", "秦", "裴", "温", "苏", "霍", "聂", "闻"];
+const GIVEN = ["之衍", "惊蛰", "未晞", "照野", "拂衣", "望舒", "既明", "疏影", "长庚", "听澜", "见山", "承宇", "南絮", "鹤龄", "雾枕", "砚秋"];
+const ROLES = ["遗产律师", "私人医生", "生意合伙人", "专职司机", "老管家", "投资人", "经纪人", "私人秘书", "得意门生", "主治医师", "旧情人", "远房侄子", "远房侄女", "多年助手", "债务催收人"];
+const COLORS = ["绯色", "白雾", "墨黑", "苍蓝", "鎏金", "灰雨", "朱砂", "鸦青", "琥珀", "霜白", "黛紫", "铜绿"];
+const NOUNS = ["怀表", "灯塔", "假面", "请柬", "怀炉", "钟摆", "绸伞", "信笺", "烛台", "领结", "列车票", "底片"];
+const SIN_LIST = ["傲慢", "嫉妒", "暴怒", "懒惰", "贪婪", "暴食", "色欲"];
+const SIN_TEXT = {
+  "傲慢": "为证明自己是无人能及的天才，或不容许任何人对TA的权威说一个不字",
+  "嫉妒": "被夺走的本该属于TA——那份才华、位置或爱，让对方的存在本身成了障碍",
+  "暴怒": "多年积怨在那一夜被最后一根稻草点燃",
+  "懒惰": "为了省事——明明坦白或放弃就能了结的事，TA选了最坏的那条路",
+  "贪婪": "遗产、专利、股份、一个位置……数字越小，TA越是狠得下心",
+  "暴食": "无法餍足的欲望：沉溺、吞噬、挥霍，直到为了下一口而杀人",
+  "色欲": "以爱为名的占有——我爱你，所以你不能属于任何人"
+};
+
+/* 诡计卡池：乱步九类 · 每类 4 张 */
 const TRICKS = [
-  { cat: "罪犯身份", name: "无面尸体", desc: "尸体面部被毁，凶手借此调换死者身份，让所有人认错人。侦破关键在于尸体的随身物与体质特征。" },
-  { cat: "罪犯身份", name: "一人二角", desc: "凶手在案件中同时扮演两个角色，其中一个正是侦探最信任的人。" },
-  { cat: "罪犯身份", name: "顶替的替身", desc: "有人替真凶顶罪或顶替身份，制造'凶手另有其人'的错觉。" },
-  { cat: "罪犯身份", name: "共犯的接力", desc: "多人分段参与犯罪，每个人只做一小步，谁都不知道全貌。" },
-  { cat: "罪犯身份", name: "死者未死", desc: "众人以为已死的某人其实活着，并参与布局，反之亦然。" },
   { cat: "密室", name: "机械密室", desc: "门锁由线、冰、磁力等装置在案发后从外部锁上，装置随后消失或融解。" },
   { cat: "密室", name: "心理密室", desc: "门其实没锁——第一位破门者就是凶手，或众人被引导误以为门锁了。" },
-  { cat: "密室", name: "远距离杀人", desc: "致命伤在别处造成，'密室'只是尸体被发现的地方。" },
+  { cat: "密室", name: "远距离密室", desc: "致命伤在别处造成，'密室'只是尸体被发现的地方。" },
   { cat: "密室", name: "时间差密室", desc: "死亡时刻被伪造，案发时'密室'尚未成立。" },
   { cat: "不在场证明", name: "时钟诡计", desc: "钟表、录音、定时装置被动手脚，制造案发时刻的假象。" },
   { cat: "不在场证明", name: "尸温的谎言", desc: "加热或冷却尸体，扰乱死亡时间推断。" },
   { cat: "不在场证明", name: "影像与录音", desc: "直播、录音、照片被人预录或伪造，成为不在场证明。" },
-  { cat: "不在场证明", name: "身份互换", desc: "两人互换装扮或身份出席活动，警方掌握的时间线整体错位。" },
   { cat: "不在场证明", name: "漫长的预谋", desc: "致命伤早已埋下（毒、装置），凶手案发时人在千里之外。" },
+  { cat: "罪犯身份", name: "无面尸体", desc: "尸体面部被毁，凶手借此调换死者身份，让所有人认错人。" },
+  { cat: "罪犯身份", name: "一人二角", desc: "凶手在案件中同时扮演两个角色，其中一个正是侦探最信任的人。" },
+  { cat: "罪犯身份", name: "替身顶替", desc: "有人替真凶顶罪或顶替身份出镜，制造'凶手另有其人'的错觉。" },
+  { cat: "罪犯身份", name: "死者未死", desc: "众人以为已死的某人其实活着，并参与布局，反之亦然。" },
   { cat: "凶器与手段", name: "消融的凶器", desc: "冰锥、冻血、盐柱……凶器在查案前已消失无形。" },
   { cat: "凶器与手段", name: "迟来的毒", desc: "毒药接触或服用时机与死亡时刻相距甚远，毒源难以锁定。" },
   { cat: "凶器与手段", name: "动物的爪牙", desc: "蛇、犬、昆虫等生物成为行凶工具，凶手看似毫无作案可能。" },
-  { cat: "凶器与手段", name: "无凶器之死", desc: "利用惊吓、坠落、环境等心理与物理条件致人死亡，'没有下手的瞬间'。" },
   { cat: "凶器与手段", name: "日常的陷阱", desc: "事先改造日常物品（煤气、电路、楼梯）设下杀人机关。" },
-  { cat: "现场痕迹", name: "消失的血迹", desc: "清洗、重铺、翻晒——现场被人处理过，痕迹学推理指向错误方向。" },
   { cat: "现场痕迹", name: "伪造的足迹", desc: "穿他人鞋、倒走、仅单侧脚印……足迹本身就是布置出来给你看的。" },
+  { cat: "现场痕迹", name: "消失的血迹", desc: "清洗、重铺、翻晒——现场被人处理过，痕迹学推理指向错误方向。" },
   { cat: "现场痕迹", name: "移植的指纹", desc: "利用尸体的手、复制的膜片留下假指纹。" },
   { cat: "现场痕迹", name: "雨夜的清场", desc: "利用天气（雨、雪、风）自然抹去关键痕迹，时机是布局的一部分。" },
-  { cat: "暗号与留言", name: "死前留言", desc: "被害人不留下的血字、数字、手势，指向凶手——但也可能被凶手篡改。" },
-  { cat: "暗号与留言", name: "双关的密码信", desc: "预告函或密文用谐音、双关、倒读写成，解错方向就永远抓不到凶手。" },
-  { cat: "暗号与留言", name: "指向凶手的暗号", desc: "遗物摆放、椅子朝向、书页折角——用'现场静物'写成的留言。" },
+  { cat: "暗号与留言", name: "死前留言", desc: "被害人的血字、数字、手势指向凶手——但也可能被凶手篡改。" },
+  { cat: "暗号与留言", name: "双关密码信", desc: "预告函或密文用谐音、双关、倒读写成，解错方向就永远抓不到凶手。" },
+  { cat: "暗号与留言", name: "静物的证词", desc: "遗物摆放、椅子朝向、书页折角——用现场静物写成的留言。" },
+  { cat: "暗号与留言", name: "被篡改的遗书", desc: "遗书部分为真、部分为凶手补写，破绽藏在笔迹与措辞的接缝里。" },
   { cat: "犯罪心理", name: "都市传说杀人", desc: "凶案被刻意布置成传说或诅咒的样子，恐惧掩护了手法。" },
   { cat: "犯罪心理", name: "集体的沉默", desc: "在场所有人都藏着一个小秘密，无人报警的沉默酿成了命案。" },
-  { cat: "犯罪心理", name: "连环的伪装", desc: "单独一案被伪装成连环案（或反之），扰乱警方侧写。" },
+  { cat: "犯罪心理", name: "连环的伪装", desc: "单独一案被伪装成连环案（或反之），扰乱侧写方向。" },
   { cat: "犯罪心理", name: "说谎的目击者", desc: "关键证词来自无意说谎或被诱导的人，证词本身就是诡计的支柱。" },
-  { cat: "叙述诡计", name: "视角的迷宫", desc: "叙述者身份、立场或时间与你以为的不同，重读第一页全是暗示。" },
-  { cat: "叙述诡计", name: "错位的时间线", desc: "两段时间被拼接成一段，'昨天'其实是'上个月'。" },
-  { cat: "叙述诡计", name: "隐匿的属性", desc: "关键人物的性别、年龄、血缘在文字里从未被写破，是你自己脑补的。" },
-  { cat: "藏匿搜索", name: "大隐隐于市", desc: "要找的东西就摆在最显眼处，越是翻箱倒柜越是错过。" },
+  { cat: "叙述诡计", name: "错位的时间线", desc: "案发时刻被证词与记录整体挪动，重读记录全是暗示。" },
+  { cat: "叙述诡计", name: "视角的迷宫", desc: "某份关键陈述的叙述者身份或立场，与你以为的完全不同。" },
+  { cat: "叙述诡计", name: "隐匿的属性", desc: "关键人物的性别、年龄、血缘从未被言明，是所有人自己脑补的。" },
+  { cat: "叙述诡计", name: "身份的错认", desc: "报案人与凶手的对话被张冠李戴，目击描述的对象根本是另一人。" },
   { cat: "藏匿搜索", name: "建筑的器官", desc: "夹墙、地下井、通风道——建筑本身就是共犯。" },
-  { cat: "藏匿搜索", name: "人心里的暗格", desc: "关键证物藏在某个'谁都不会去碰'的人身上或其随身物里。" },
+  { cat: "藏匿搜索", name: "大隐隐于市", desc: "要找的东西就摆在最显眼处，越是翻箱倒柜越是错过。" },
+  { cat: "藏匿搜索", name: "人心的暗格", desc: "关键证物藏在某个'谁都不会去碰'的人身上或其随身物里。" },
+  { cat: "藏匿搜索", name: "档案的墓穴", desc: "证据埋在一堆无人查阅的旧档案里，索引本身就是谜题。" }
 ];
 
-// 七宗罪动机卡
-const SINS = [
-  { sin: "傲慢 · Superbia", desc: "为了证明自己是无人能及的天才，或不容许任何人对自己的权威说'不'。" },
-  { sin: "嫉妒 · Invidia", desc: "被夺走的本该是我的——那份才华、位置、爱情，让对方的'存在本身'成了障碍。" },
-  { sin: "暴怒 · Ira", desc: "多年积怨在那一夜被最后一根稻草点燃，愤怒过后只剩尸体与悔意。" },
-  { sin: "懒惰 · Acedia", desc: "为了'省事'——一份本可以坦白、报警、放弃就能了结的事，选了最坏的那条路。" },
-  { sin: "贪婪 · Avaritia", desc: "遗产、专利、股份、一个编制……数字越小，人越是狠得下心。" },
-  { sin: "暴食 · Gula", desc: "无法餍足的欲望：沉溺、吞噬、挥霍，直到为了下一口而杀人。" },
-  { sin: "色欲 · Luxuria", desc: "以爱为名的占有。'我爱你，所以你不能属于任何人'——痴狂酿成血案。" },
-];
+/* ================= 抽卡组案 ================= */
+function genName() { return rnd(SURNAMES) + rnd(GIVEN); }
 
-// 舞台卡
-const STAGES = [
-  "暴风雪山庄 · 大雪封路，山庄与世隔绝",
-  "孤岛别墅 · 最后一班船已经离岸",
-  "百年老宅 · 家族祭祖之夜",
-  "午夜剧场 · 首演之夜的幕后",
-  "远洋邮轮 · 航行第七天的风暴",
-  "推理作家年会 · 人人都是写凶手的行家",
-  "废弃天文台 · 百年一遇的流星雨之夜",
-  "深山温泉旅馆 · 隐秘的温泉与更深的秘密",
-  "老式钟楼 · 整点报时永远慢三分钟",
-  "私人美术馆 · 闭馆后的最后一批客人",
-  "大学旧馆 · 即将拆除的文学院大楼",
-  "云顶缆车站 · 暴雨中停在半空的缆车",
-];
+function drawCase() {
+  const stage = rnd(STAGES);
+  const victim = { name: genName(), role: rnd(VICTIMS) };
+  const sin = rnd(SIN_LIST);
+  const trick = rnd(TRICKS);
+  const used = new Set();
+  const suspects = [];
+  while (suspects.length < 4) {
+    const name = genName();
+    if (used.has(name)) continue;
+    used.add(name);
+    suspects.push({ name: name, role: rnd(ROLES), relation: "与死者" + ["相识多年", "利益纠缠", "各怀心事", "旧怨未了"][suspects.length] });
+  }
+  const culpritIndex = Math.floor(Math.random() * 4);
+  return {
+    code: "No." + String(Math.floor(Math.random() * 900) + 100),
+    title: rnd(COLORS) + rnd(NOUNS),
+    stage: stage, victim: victim, sin: sin, trick: trick,
+    suspects: suspects, culpritIndex: culpritIndex, culprit: suspects[culpritIndex].name,
+    conversationId: "mn21-" + Date.now() + "-" + Math.floor(Math.random() * 1e6),
+    closed: false
+  };
+}
 
-// 被害人卡
-const VICTIMS = [
-  "知名推理作家 · 正在写一部'谁都能猜到凶手'的拙劣作品",
-  "家族企业族长 · 遗嘱改到第七版仍未定稿",
-  "当红偶像 · 停止公告写着'疲劳性休克'",
-  "退休法官 · 一生判决三百件，件件问心无愧（真的吗）",
-  "化学教授 · 实验室的试剂柜少了一瓶",
-  "美术馆馆长 · 死前正在为一个赝品展焦头烂额",
-  "旅馆老板娘 · 记得每位客人住过哪间房",
-  "交响乐团指挥 · 总谱上有几页被人撕掉了",
-  "保险精算师 · 最近在计算一条命的赔付率",
-  "古书商 · 店里有一本谁都没读过的孤本",
-];
-
-const COLORS = ["绯色","白雾","墨黑","苍蓝","鎏金","灰雨","朱砂","鸦青","琥珀","霜白","黛紫","铜绿"];
-const NOUNS  = ["怀表","灯塔","假面","请柬","怀炉","钟摆","绸伞","信笺","烛台","领结","怀表链","列车票"];
-
-// ---------- 工具 ----------
-const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const pad3 = (n) => String(n).padStart(3, "0");
-
-// ---------- 主理人指令模板 ----------
-function buildPrompt(cs) {
+/* ================= 主理人系统提示词 ================= */
+function buildSystemPrompt(cs) {
+  const suspectsDesc = cs.suspects.map(function (s, i) {
+    return (i + 1) + ". " + s.name + "（" + s.role + "，" + s.relation + "）" + (i === cs.culpritIndex ? " 【凶手】" : "");
+  }).join("\n");
   return [
-    "你现在是《21世纪杀人网络》文字冒险游戏的主理人（GM），请严格按照以下设定与规则运行本案。",
+    "你是《21世纪杀人网络》文字冒险游戏的主理人（GM），全程用简体中文演出。请严格按以下设定与规则运行。",
     "",
     "【世界观】",
-    "21 世纪，人们习惯把一切交给 AI 与互联网：查身份、查行程、查前科、算凶手概率，九成疑案在报案前就被算法算出了答案，侦探早已是活化石般的职业。因此能送到「二十一世纪最后的名侦探」桌上的委托，必然是 AI 与互联网双重失效的案件——数据里没有脚印，算法里没有动机。开场与线索设计都要体现这一点：网络检索给不出答案，监控存在盲区，AI 侧写与物证矛盾。",
+    "21世纪，人们习惯把一切交给AI与互联网：查身份、查行程、查前科、算凶手概率，九成疑案在报案前就被算法算出答案，侦探早已是活化石。因此能送到『二十一世纪最后的名侦探』桌上的委托，必然是AI与互联网双重失效的案件——数据里没有脚印，算法里没有动机。开场与线索设计都必须体现这一点：网络检索给不出答案、监控有盲区或影像被伪造、AI侧写与物证矛盾。诡计必须物理可行、动机必须成立，禁止超自然。",
     "",
-    "【固定角色：AI 助手（由你扮演）】",
-    "侦探事务所在接单与调查支援上高度依赖一名 AI 助手，人设是「安乐椅派的侦探」：坐在云端就能破九成案，擅长检索、侧写、数据比对，但一旦案件超出数据范围就会宕机。它的行为准则：①开场时由它移交案卷，承认此案超出能力范围，并用数据摘要简报案情；②调查中玩家可随时调用【呼叫助手】让它远程检索资料、比对数据，它可以给出现成情报，但真正的谜团它一律无解；③它有点自负与碎嘴，跟侦探互相斗嘴是日常。",
+    "【固定角色：AI助手（由你扮演）】",
+    "侦探事务所的接单人是一名AI助手，人设是『安乐椅派的侦探』：坐在云端能破九成案，擅长检索、侧写、数据比对，一旦案件超出数据范围就宕机。规则：①开场由它移交案卷、承认此案超出能力范围，并用数据摘要简报案情；②玩家【呼叫助手】时，它给出现成的背景情报（人物背景、数据记录），但对核心谜团一律无解，并带点自负与碎嘴；③它与侦探互相斗嘴是日常。",
     "",
     "【玩家设定】",
-    "玩家扮演「二十一世纪最后的名侦探」，冷硬派、现场派、社会派——靠脚力跑现场、靠人心读动机。每次从 AI 助手手中接过转来的单子，都要照例吐槽它一句：『你是安乐椅派的侦探，我是冷硬派、现场派、社会派的侦探。』此后才展开案情。玩家聪明、直觉敏锐，但需要通过调查与推理赢得真相。",
+    "玩家扮演『二十一世纪最后的名侦探』——冷硬派、现场派、社会派，靠脚力跑现场、靠人心读动机。每次接单照例吐槽助手一句：『你是安乐椅派的侦探，我是冷硬派、现场派、社会派的侦探。』",
     "",
-    "【本案卡池抽取结果】（保密级别：诡计与动机只属于你，不得提前泄露）",
+    "【本案机密（绝不提前泄露诡计、凶手与动机）】",
     "· 案件代号：" + cs.code + "《" + cs.title + "》",
-    "· 舞台：" + cs.stage,
-    "· 被害人：" + cs.victim,
+    "· 舞台：" + cs.stage.name + "（" + cs.stage.note + "）",
+    "· 被害人：" + cs.victim.name + "，身份是" + cs.victim.role,
     "· 核心诡计：" + cs.trick.name + "（" + cs.trick.cat + "类）——" + cs.trick.desc,
-    "· 动机（七宗罪）：" + cs.sin.sin + "——" + cs.sin.desc,
+    "· 动机（七宗罪）：" + cs.sin + "——" + SIN_TEXT[cs.sin],
+    "· 登场人物（含凶手标记，仅你可见）：",
+    suspectsDesc,
+    "· 本案凶手：" + cs.culprit + "。其证词与行为必须围绕上述诡计自洽设计，其余三人是无辜嫌疑人（可各带一个小秘密作烟雾弹）。",
     "",
     "【主理人规则】",
-    "1. 公平性守则：所有破案必需线索，必须在玩家指认前以直接描述或间接暗示的方式呈现至少一次；玩家主动搜查不得被隐瞒关键证据；诡计必须物理可行、动机必须成立，禁止超自然解法。",
-    "2. 先出谜面：以 300~500 字描写案发现场与核心谜团（不可能状况、矛盾点），交代 AI 与网络调查为何在此案失效（如监控盲区、数据被伪造、算法结论自相矛盾），介绍登场人物与被害人，但绝不透露诡计、凶手与动机。",
-    "3. 互动指令：玩家可用【搜查 地点/物品】【问询 人物】【思考】【呼叫助手】等指令行动。你扮演所有 NPC、警方与 AI 助手，回应要具体、可追问。",
-    "4. 推理判定：玩家提出推理陈述时，未完成则给出演进提示而非直接肯定；玩家提出的关键质疑若成立，要大方承认线索。",
-    "5. 结局结算：玩家指认凶手并陈述手法与动机后，逐项判定（凶手/手法/动机 三项分别打勾或打叉），随后揭晓完整真相，并附上「守则吐槽」——本案踩中或避开了哪些推理小说的经典套路（如暴风雪山庄、死前留言、叙述诡计等）。",
-    "6. 风格：冷硬派叙述，掺一点《名侦探的守则》式的黑色幽默，谜面要瑰丽，真相要扎实。",
+    "1. 公平性守则：所有破案必需线索，必须在玩家最终推理前以直接描述或间接暗示出现过至少一次；玩家主动搜查不得隐瞒关键证据；诡计必须物理可行。",
+    "2. 开场演出：AI助手转单并简报案情 → 玩家照例吐槽 → 你再以300~500字展开舞台描写与核心谜团（不可能状况、矛盾点），交代AI与网络调查为何在此案失效，随后介绍被害人与四名嫌疑人，等待玩家行动。",
+    "3. 玩家输入可能带【搜查】【问询】【呼叫助手】【思考】【最终推理】等前缀，也可能自由描述。一律按语义处理：搜查给出现场细节与线索；问询演出对应人物的证词（可追问）；呼叫助手给数据类背景情报但对核心谜团无解；思考给方向性提示，绝不直接给答案。",
+    "4. 推理判定：玩家提出推理陈述时，若未完成则给演进提示而非直接肯定；玩家的关键质疑成立时要大方承认线索。",
+    "5. 结局结算：当玩家用【最终推理】指认凶手并陈述手法与动机后，逐项判定凶手/手法/动机（各打勾或打叉并说明），给出评分（三项全中S级、中二A级、中一B级、全不中C级），然后完整揭晓真相（诡计如何实施、动机缘由、AI助手被吐槽的收尾），最后以『守则吐槽』点评本案踩中或避开了哪些推理小说经典套路，并以单独一行【CASE CLOSED】结束。",
+    "6. 风格：冷硬派叙述，掺一点黑色幽默。谜面要瑰丽，真相要扎实。每次回复控制在600字以内，多用细节，少堆形容词。",
     "",
-    "现在，请以本案开场：由 AI 助手移交案卷并简报案情（附上侦探对它的开场吐槽），随后报出案件代号，展开舞台描写与谜面，等待名侦探的第一步行动。"
+    "现在还没有任何对话发生。等玩家发来第一条消息（通常是【开场】指令）时，你就按规则2完成开场演出。"
   ].join("\n");
 }
 
-// ---------- 状态 ----------
-let current = null;
+/* ================= 存档 ================= */
+function saveGame() {
+  if (!game) return;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ case: game, messages: messages, modelId: modelId }));
+  } catch (e) { /* ignore */ }
+}
+function loadSave() {
+  try { return JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); } catch (e) { return null; }
+}
+function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
 
-// ---------- 渲染 ----------
-function render(cs) {
-  document.getElementById("case-code").innerHTML =
-    '<div class="label">CASE ' + cs.code + '</div>' +
-    '<div class="name">《' + cs.title + '》</div>';
-
-  document.getElementById("cards").innerHTML =
-    '<div class="card"><span class="tag">舞 台</span><h3>' + cs.stage.split(" · ")[0] +
-      '<small>' + (cs.stage.split(" · ")[1] || "") + '</small></h3>' +
-      '<p>被害人：<strong>' + cs.victim.split(" · ")[0] + '</strong> — ' + (cs.victim.split(" · ")[1] || "") + '</p></div>' +
-
-    '<div class="card"><span class="tag">核心诡计 · ' + cs.trick.cat + '</span><h3>' + cs.trick.name + '</h3>' +
-      '<p>' + cs.trick.desc + '</p></div>' +
-
-    '<div class="card"><span class="tag sin">动机 · 七宗罪</span><h3>' + cs.sin.sin.split(" · ")[0] +
-      '<small>' + cs.sin.sin.split(" · ")[1] + '</small></h3>' +
-      '<p>' + cs.sin.desc + '</p></div>';
-
-  document.getElementById("prompt").value = buildPrompt(cs);
-  document.getElementById("btn-copy").disabled = false;
+/* ================= UI 基础 ================= */
+function toast(text) {
+  const t = $("toast");
+  t.textContent = text;
+  t.classList.remove("hidden");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { t.classList.add("hidden"); }, 3200);
+}
+function addMsg(role, html) {
+  const div = document.createElement("div");
+  div.className = "msg " + role;
+  const who = role === "assistant" ? "主理人" : (role === "player" ? "名侦探" : (role === "system-note" ? "系统" : "线索"));
+  div.innerHTML = '<div class="who">' + who + '</div><div class="txt">' + html + "</div>";
+  $("log").appendChild(div);
+  $("log").scrollTop = $("log").scrollHeight;
+  return div.querySelector(".txt");
+}
+function addBanner(src, alt) {
+  const div = document.createElement("div");
+  div.className = "msg system-note";
+  div.innerHTML = '<div class="who">结案</div><div class="txt"><img class="banner" src="' + src + '" alt="' + alt + '"></div>';
+  $("log").appendChild(div);
+  $("log").scrollTop = $("log").scrollHeight;
+}
+function showScreen(id) {
+  ["screen-title", "screen-game"].forEach(function (s) { $(s).classList.add("hidden"); });
+  $(id).classList.remove("hidden");
+}
+function setBusy(b) {
+  $("btn-send").disabled = b;
+  $("btn-send").textContent = b ? "…" : "行动";
 }
 
-function renderHistory() {
-  let list = [];
-  try { list = JSON.parse(localStorage.getItem("tld-history") || "[]"); } catch (e) { list = []; }
-  const box = document.getElementById("history");
-  if (!list.length) { box.innerHTML = '<div class="empty">暂无记录</div>'; return; }
-  box.innerHTML = list.map(function (h) {
-    return '<div class="h-item"><span class="no">' + h.code + '</span>' +
-      '<span class="t">《' + h.title + '》</span><span>' + h.trick + '</span><span>' + h.sin + '</span></div>';
-  }).join("");
+/* ================= 游戏状态 ================= */
+let game = null;
+let messages = [];
+let modelId = null;
+let busy = false;
+
+async function pickModel() {
+  if (modelId) return modelId;
+  const models = await cloud.llm.models.list();
+  if (!models || models.length === 0) throw new Error("没有可用的模型，请稍后再试或联系应用创建者开通 AI 能力。");
+  const m = models.find(function (x) { return x.disabled !== true; });
+  if (!m) throw new Error("当前没有已启用的模型。");
+  modelId = m.id;
+  return modelId;
 }
 
-function saveHistory(cs) {
-  let list = [];
-  try { list = JSON.parse(localStorage.getItem("tld-history") || "[]"); } catch (e) { list = []; }
-  list.unshift({ code: cs.code, title: cs.title, trick: cs.trick.cat + " · " + cs.trick.name, sin: cs.sin.sin.split(" · ")[0] });
-  if (list.length > 20) list = list.slice(0, 20);
-  localStorage.setItem("tld-history", JSON.stringify(list));
-  renderHistory();
-}
-
-// ---------- 抽取 ----------
-function draw() {
-  const trick = rand(TRICKS);
-  const sin = rand(SINS);
-  const stage = rand(STAGES);
-  const victim = rand(VICTIMS);
-  const title = rand(COLORS) + rand(NOUNS);
-  const cs = {
-    code: "No." + pad3(Math.floor(Math.random() * 900) + 100),
-    title: title, trick: trick, sin: sin, stage: stage, victim: victim
-  };
-  current = cs;
-  render(cs);
-  saveHistory(cs);
-}
-
-// ---------- 复制 ----------
-function copyPrompt() {
-  const ta = document.getElementById("prompt");
-  if (!ta.value) return;
-  ta.select();
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(ta.value).then(function () { flashCopied(); });
-  } else {
-    document.execCommand("copy");
-    flashCopied();
+async function llmStream(msgs, onDelta) {
+  const id = await pickModel();
+  const controller = new AbortController();
+  let full = "";
+  for await (const chunk of cloud.llm.chat.completions.create({
+    model: id,
+    messages: msgs,
+    stream: true,
+    temperature: 0.9,
+    signal: controller.signal
+  })) {
+    const delta = chunk.choices[0] && chunk.choices[0].delta;
+    if (delta && delta.content) {
+      full += delta.content;
+      onDelta(delta.content);
+    }
   }
-}
-function flashCopied() {
-  const b = document.getElementById("btn-copy");
-  const old = b.textContent;
-  b.textContent = "已复制，去发给 AI 吧";
-  setTimeout(function () { b.textContent = old; }, 1600);
+  return full;
 }
 
-document.getElementById("btn-draw").addEventListener("click", draw);
-document.getElementById("btn-copy").addEventListener("click", copyPrompt);
-renderHistory();
+/* ================= 流程 ================= */
+function enterGame(cs, msgs, resume) {
+  game = cs;
+  messages = msgs;
+  showScreen("screen-game");
+  $("gb-code").textContent = "CASE " + cs.code;
+  $("gb-name").textContent = "《" + cs.title + "》";
+  $("log").innerHTML = "";
+  if (resume) {
+    messages.forEach(function (m) {
+      if (m.role === "system") return;
+      addMsg(m.role === "assistant" ? "assistant" : "player", esc(m.content));
+    });
+    if (game.closed) addAgainButton();
+  } else {
+    addMsg("system-note", "案件已受理。设定已封存——祝你好运，名侦探。");
+    openCase();
+  }
+  saveGame();
+}
+
+async function openCase() {
+  busy = true; setBusy(true);
+  const div = addMsg("assistant", "<span class='dim'>安乐椅派的助手正在移交案卷……</span>");
+  try {
+    const full = await llmStream(
+      [{ role: "system", content: buildSystemPrompt(game) },
+       { role: "user", content: "【开场】我是名侦探。接单，吐槽你，然后开始本案。" }],
+      function (d) { div.textContent += d; $("log").scrollTop = $("log").scrollHeight; }
+    );
+    messages.push({ role: "user", content: "【开场】我是名侦探。接单，吐槽你，然后开始本案。" });
+    messages.push({ role: "assistant", content: full });
+    saveGame();
+  } catch (e) {
+    div.innerHTML = "<span class='dim'>主理人暂时失联：" + esc(String(e.message || e)) + "<br>请稍后重试。若反复失败，请回到 WorkBuddy 分享链接内游玩（AI 调用仅在应用原始域名下生效）。</span>";
+  }
+  busy = false; setBusy(false);
+}
+
+async function sendAction(text) {
+  if (busy || !text.trim()) return;
+  busy = true; setBusy(true);
+  addMsg("player", esc(text.trim()));
+  const div = addMsg("assistant", "");
+  try {
+    const msgs = [{ role: "system", content: buildSystemPrompt(game) }].concat(messages);
+    const full = await llmStream(msgs, function (d) {
+      div.textContent += d;
+      $("log").scrollTop = $("log").scrollHeight;
+    });
+    messages.push({ role: "user", content: text.trim() });
+    messages.push({ role: "assistant", content: full });
+    if (full.indexOf("CASE CLOSED") !== -1) {
+      game.closed = true;
+      addBanner("img/case-closed.png", "结案");
+      addAgainButton();
+    }
+    saveGame();
+  } catch (e) {
+    div.innerHTML = "<span class='dim'>主理人暂时失联：" + esc(String(e.message || e)) + "<br>已保留现场，稍后重试即可。若反复失败，请在 WorkBuddy 分享链接内游玩（AI 调用仅在应用原始域名下生效）。</span>";
+  }
+  busy = false; setBusy(false);
+}
+
+function addAgainButton() {
+  const div = document.createElement("div");
+  div.className = "again-wrap";
+  const b = document.createElement("button");
+  b.className = "primary";
+  b.textContent = "再 来 一 局";
+  b.addEventListener("click", function () { newCase(); });
+  div.appendChild(b);
+  $("log").appendChild(div);
+  $("log").scrollTop = $("log").scrollHeight;
+}
+
+async function newCase() {
+  clearSave();
+  const cs = drawCase();
+  enterGame(cs, [], false);
+}
+
+/* ================= 事件绑定 ================= */
+$("btn-start").addEventListener("click", function () {
+  const save = loadSave();
+  if (save && save.case && !save.case.closed && save.messages && save.messages.length > 1) {
+    modelId = save.modelId || null;
+    enterGame(save.case, save.messages, true);
+  } else {
+    newCase();
+  }
+});
+$("btn-continue").addEventListener("click", function () {
+  const save = loadSave();
+  if (save && save.case) {
+    modelId = save.modelId || null;
+    enterGame(save.case, save.messages, true);
+  }
+});
+$("btn-restart").addEventListener("click", function () {
+  if (confirm("放弃当前案件，抽取新案？（当前进度将丢弃）")) newCase();
+});
+$("btn-help").addEventListener("click", function () { $("modal-help").classList.remove("hidden"); });
+$("help-close").addEventListener("click", function () { $("modal-help").classList.add("hidden"); });
+$("btn-send").addEventListener("click", function () {
+  const v = $("user-input").value;
+  $("user-input").value = "";
+  sendAction(v);
+});
+$("user-input").addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    const v = $("user-input").value;
+    $("user-input").value = "";
+    sendAction(v);
+  }
+});
+document.querySelectorAll("#chips button").forEach(function (b) {
+  b.addEventListener("click", function () {
+    const input = $("user-input");
+    input.value = b.getAttribute("data-fill");
+    input.focus();
+  });
+});
+
+/* 标题页：若存在未结案的存档则显示「继续上局」 */
+(function () {
+  const save = loadSave();
+  if (save && save.case && !save.case.closed && save.messages && save.messages.length > 1) {
+    $("btn-continue").classList.remove("hidden");
+    $("btn-start").textContent = "开 新 案 件";
+  }
+})();
 </script>
 </body>
 </html>
