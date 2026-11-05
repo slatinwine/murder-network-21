@@ -39,6 +39,12 @@
     height: 17px; vertical-align: -4px; margin-left: 4px;
     filter: sepia(1) saturate(1.8) brightness(0.95) hue-rotate(-8deg);
   }
+  .mirror-note {
+    margin-top: 22px; max-width: 580px; text-align: left;
+    border: 1px solid var(--danger); background: rgba(176, 73, 47, 0.12);
+    color: var(--ink); font-size: 13.5px; padding: 12px 16px; line-height: 1.8;
+  }
+  .mirror-note a { color: var(--brass); white-space: nowrap; }
   @media (max-width: 560px) {
     #screen-title .visit-stats { bottom: 56px; }
   }
@@ -164,6 +170,16 @@ const cloud = WorkBuddyCloud.createWorkBuddyCloud({
 
 /* ================= 工具 ================= */
 const $ = (id) => document.getElementById(id);
+
+/* 镜像站检测：AI 主理人只在应用原始域名下执勤（跨域会被浏览器拦截） */
+(function () {
+  if (location.origin === PUBLIC_CONFIG.endpoint) return;
+  const note = document.createElement("div");
+  note.className = "mirror-note";
+  note.innerHTML = "⚠ 当前是镜像站（" + esc(location.host || "本地文件") + "），浏览器会拦下 AI 调用，主理人无法在这里执勤。<br>" +
+    '<a href="https://murder-network-21.app.workbuddy.host/?sharecode=KZDNHPVQFI">→ 前往正式版游玩（AI 正常执勤）</a>';
+  document.getElementById("screen-title").appendChild(note);
+})();
 const rnd = (a) => a[Math.floor(Math.random() * a.length)];
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
@@ -466,7 +482,7 @@ async function openCase() {
     messages.push({ role: "assistant", content: full });
     saveGame();
   } catch (e) {
-    div.innerHTML = "<span class='dim'>主理人暂时失联：" + esc(String(e.message || e)) + "<br>请稍后重试。若反复失败，请回到 WorkBuddy 分享链接内游玩（AI 调用仅在应用原始域名下生效）。</span>";
+    div.innerHTML = "<span class='dim'>主理人暂时失联：" + esc(String(e.message || e)) + "<br>请稍后重试。若反复失败，请回到 WorkBuddy 分享链接内游玩（AI 调用仅在应用原始域名下生效）。<br>当前页面域名：" + esc(location.host || "本地文件") + "</span>";
   }
   busy = false; setBusy(false);
 }
@@ -494,7 +510,7 @@ async function sendAction(text) {
     saveGame();
   } catch (e) {
     messages.pop(); /* 回滚本次输入，重试时不会重复 */
-    div.innerHTML = "<span class='dim'>主理人暂时失联：" + esc(String(e.message || e)) + "<br>已保留现场，稍后重试即可。若反复失败，请在 WorkBuddy 分享链接内游玩（AI 调用仅在应用原始域名下生效）。</span>";
+    div.innerHTML = "<span class='dim'>主理人暂时失联：" + esc(String(e.message || e)) + "<br>已保留现场，稍后重试即可。若反复失败，请在 WorkBuddy 分享链接内游玩（AI 调用仅在应用原始域名下生效）。<br>当前页面域名：" + esc(location.host || "本地文件") + "</span>";
   }
   busy = false; setBusy(false);
 }
