@@ -33,6 +33,15 @@
   #screen-title .tagline { color: var(--ink-dim); font-size: 14.5px; margin: 18px 0 30px; max-width: 580px; }
   #screen-title .btns { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
   #screen-title .foot { position: fixed; bottom: 18px; left: 0; right: 0; font-size: 11px; color: var(--ink-dim); letter-spacing: 0.25em; }
+  #screen-title .visit-stats { position: fixed; bottom: 42px; left: 0; right: 0; font-size: 12px; color: var(--ink-dim); letter-spacing: 0.12em; }
+  #screen-title .visit-stats .vs-sep { margin: 0 8px; opacity: 0.5; }
+  #screen-title .visit-stats .vs-badge {
+    height: 17px; vertical-align: -4px; margin-left: 4px;
+    filter: sepia(1) saturate(1.8) brightness(0.95) hue-rotate(-8deg);
+  }
+  @media (max-width: 560px) {
+    #screen-title .visit-stats { bottom: 56px; }
+  }
 
   #screen-game { height: 100vh; display: flex; flex-direction: column; }
   #gamebar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--panel-edge); background: var(--panel); flex-shrink: 0; gap: 10px; }
@@ -90,6 +99,11 @@
     <button id="btn-continue" class="hidden">继续上局</button>
     <button id="btn-start" class="primary">开 始 游 戏</button>
     <button id="btn-help" class="ghost">玩法说明</button>
+  </div>
+  <div class="visit-stats">
+    <span id="vs-ip">正在登记接入 IP…</span>
+    <span class="vs-sep">·</span>
+    <span>使用过本所的 IP（按 IP 去重）<img class="vs-badge" src="https://hits.sh/murder-network-21.svg?view=unique&style=flat-square" alt="独立访客数"></span>
   </div>
   <div class="foot">FAIR-PLAY MYSTERY · 线索必前置 · 诡计必可行</div>
 </section>
@@ -333,6 +347,20 @@ function loadSave() {
   try { return JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); } catch (e) { return null; }
 }
 function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+
+/* 首页到访登记：显示访客 IP（计数徽章由 hits.sh 按 IP 去重统计） */
+(function () {
+  var el = $("vs-ip");
+  if (!el) return;
+  fetch("https://api.ip.sb/ip").then(function (r) { return r.text(); }).then(function (t) {
+    var ip = t.trim();
+    el.textContent = ip ? "你的接入 IP：" + ip : "IP 登记暂不可用";
+  }).catch(function () {
+    fetch("https://api.ipify.org?format=json").then(function (r) { return r.json(); }).then(function (j) {
+      el.textContent = j && j.ip ? "你的接入 IP：" + j.ip : "IP 登记暂不可用";
+    }).catch(function () { el.textContent = "IP 登记暂不可用"; });
+  });
+})();
 
 /* ================= UI 基础 ================= */
 function toast(text) {
